@@ -19,8 +19,9 @@ GameJournal.Meta = {
 	genre     = "Edo-period Restricted (18+) Roblox RP",
 	language  = "Luau --!strict, fully typed",
 	layers    = "Foundation + L1 Faction/Economy/Morality + L2 Combat/Duels + L3 NPC/Time/Gather + L4 Game-Feel + L5 Priest/Disaster",
-	lastPass  = "2026-06-28 (Codex Task 2: Seppuku -> Lineage/Inheritance + Rojo/Git handoff)",
+	lastPass  = "2026-06-28 (Codex narrative doc expansion + Task 2 handoff)",
 	sourceControl = "origin=https://github.com/TheEmpireRankingBot/edosamurai.git, branch=main",
+	narrativeDoc = "https://docs.google.com/document/d/14VqOW2mYENI0OAmE8xdFVNCv-wV8s_Am1c1aBv7V0jk",
 	moduleCount = 50,
 }
 
@@ -390,6 +391,7 @@ GameJournal.HandoffState = {
 		"Non-seppuku kill path leaves lineage untouched and notoriety uncleared.",
 		"Studio source was exported into the Rojo tree at C:\\Users\\chuab\\TheQuelledLand.",
 		"Git was initialized on main and origin was configured to https://github.com/TheEmpireRankingBot/edosamurai.git.",
+		"External Google Doc 'Edo: The Rising Sun - Kurosawa Storyline' expanded into the narrative north star: 'The Weight of the Rising Sun'.",
 	},
 	next={
 		"Task 3 in the new list is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.",
@@ -404,6 +406,13 @@ GameJournal.HandoffState = {
 -- CHANGELOG
 -- ============================================================================
 GameJournal.Changelog = {
+	{ date="2026-06-28", title="Codex narrative doc expansion", entries={
+		"Agent: Codex. Narrative/storyline handoff.",
+		"Files touched: external Google Doc 'Edo: The Rising Sun - Kurosawa Storyline', docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",
+		"Expanded the storyline into 'The Weight of the Rising Sun', a 4-6 hour Kurokawa campaign about law, rice, hunger, mercy, violence, seppuku, lineage, and the town remembering player choices.",
+		"Philosophical direction: bushido is neither praised nor condemned outright; quests should make each virtue solve one problem and create another.",
+		"Verified Google Doc identity, tab t.0, Heading 2 structure, normal paragraphs, and HTML export after cleanup.",
+	} },
 	{ date="2026-06-28", title="Codex Rojo/Git handoff", entries={
 		"Agent: Codex. Source-control handoff after Task #2.",
 		"Files touched: docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",

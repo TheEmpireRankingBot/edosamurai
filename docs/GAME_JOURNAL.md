@@ -8,7 +8,7 @@ Project: The Quelled Land
 Place: Edo: Rising Sun  
 Genre: Edo-period Restricted (18+) Roblox RP  
 Language: Luau `--!strict`, fully typed  
-Last pass: 2026-06-28, Codex Task 2 - Seppuku -> Lineage/Inheritance + Rojo/Git handoff
+Last pass: 2026-06-28, Codex narrative doc expansion + Task 2 handoff
 
 ## Golden Rules
 
@@ -21,6 +21,17 @@ Last pass: 2026-06-28, Codex Task 2 - Seppuku -> Lineage/Inheritance + Rojo/Git 
 - Fail loud; do not silently continue from corrupted state.
 
 ## Recent Checkpoints
+
+### Codex Narrative Doc Expansion
+
+Status: PASS, external Google Doc updated.
+
+Notes:
+- Expanded `Edo: The Rising Sun - Kurosawa Storyline` into the main narrative selling point for the game.
+- Google Doc: https://docs.google.com/document/d/14VqOW2mYENI0OAmE8xdFVNCv-wV8s_Am1c1aBv7V0jk
+- Narrative direction: philosophical bushido pressure without declaring the code good or bad.
+- New storyline spine: `The Weight of the Rising Sun`, a 4-6 hour Kurokawa campaign about law, rice, hunger, mercy, violence, seppuku, lineage, and the town remembering player choices.
+- Treat this external doc as the story north star for future quests, NPC writing, faction reactions, and main campaign implementation.
 
 ### Codex Rojo/Git Handoff
 
@@ -123,11 +134,19 @@ Green:
 - Data verification restored the live test profile after mutation checks.
 - Rojo source mirror exported from current Studio scripts into `src/`.
 - Git remote configured for `TheEmpireRankingBot/edosamurai`; push checkpoint is the current active handoff step.
+- External storyline Google Doc expanded and verified through connector readback; use it as narrative north star.
 
 Next:
 - Task 3 is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.
 
 ## Changelog
+
+### 2026-06-28 - Codex Narrative Doc Expansion
+
+- Agent: Codex. Narrative/storyline handoff.
+- Files touched: external Google Doc `Edo: The Rising Sun - Kurosawa Storyline`, `docs/GAME_JOURNAL.md`, `src/shared/GameJournal.luau`.
+- Expanded the storyline into `The Weight of the Rising Sun`, a philosophical bushido campaign that makes players question duty, mercy, loyalty, violence, honor, seppuku, and lineage without condemning or praising the code outright.
+- Verified Google Doc identity, tab `t.0`, Heading 2 structure, normal paragraphs, and HTML export after cleanup.
 
 ### 2026-06-28 - Codex Rojo/Git Handoff
 
