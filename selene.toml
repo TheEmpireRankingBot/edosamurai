@@ -1,0 +1,11 @@
+[selene]
+std = "roblox"
+
+[rules]
+empty_if = "warn"
+global_usage = "warn"
+incorrect_standard_library_use = "deny"
+shadowing = "warn"
+suspicious_reverse_loop = "deny"
+unscoped_else = "warn"
+unused_variable = "warn"

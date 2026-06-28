@@ -1,0 +1,11 @@
+# Wally packages
+/Packages/
+
+# Rojo build artifacts
+*.rbxl
+*.rbxlx
+sourcemap.json
+
+# OS
+.DS_Store
+Thumbs.db

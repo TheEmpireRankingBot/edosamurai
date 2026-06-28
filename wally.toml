@@ -1,0 +1,13 @@
+[package]
+name = "thequelledland/game"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "server"
+
+[dependencies]
+# ProfileStore is NOT currently on the Wally registry.
+# Vendor stub is active at src/shared/packages/ProfileStore.luau.
+# To install the real library:
+#   1. Download from https://github.com/MadStudioRoblox/ProfileStore
+#   2. Place ProfileStore.lua into src/shared/packages/ProfileStore.luau
+#   3. Remove the vendor stub.
