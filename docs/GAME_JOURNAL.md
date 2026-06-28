@@ -8,7 +8,7 @@ Project: The Quelled Land
 Place: Edo: Rising Sun  
 Genre: Edo-period Restricted (18+) Roblox RP  
 Language: Luau `--!strict`, fully typed  
-Last pass: 2026-06-28, Codex narrative doc expansion + Task 2 handoff
+Last pass: 2026-06-28, Codex map-story skeleton + Gensui prophecy handoff
 
 ## Golden Rules
 
@@ -31,6 +31,9 @@ Notes:
 - Google Doc: https://docs.google.com/document/d/14VqOW2mYENI0OAmE8xdFVNCv-wV8s_Am1c1aBv7V0jk
 - Narrative direction: philosophical bushido pressure without declaring the code good or bad.
 - New storyline spine: `The Weight of the Rising Sun`, a 4-6 hour Kurokawa campaign about law, rice, hunger, mercy, violence, seppuku, lineage, and the town remembering player choices.
+- 2026-06-28 update: reworked the doc into a fillable map-based skeleton, `The Bell That Rings Before Dawn`, using the Castle District, Market, Farmlands, Sanctuary, Liminal Fringe, and Execution Grounds as act structure.
+- Added new character web: Miyo, Captain Hayato, Lady Renko, O-Kane, Priest Gensui, Jiro, and Sute.
+- Priest Gensui is the prophecy hinge. His line about mirror/rice/bell/rope/kegare should sound like shrine atmosphere first, then become clear only after the execution arc resolves.
 - Treat this external doc as the story north star for future quests, NPC writing, faction reactions, and main campaign implementation.
 
 ### Codex Rojo/Git Handoff
@@ -134,12 +137,21 @@ Green:
 - Data verification restored the live test profile after mutation checks.
 - Rojo source mirror exported from current Studio scripts into `src/`.
 - Git remote configured for `TheEmpireRankingBot/edosamurai`; push checkpoint is the current active handoff step.
-- External storyline Google Doc expanded and verified through connector readback; use it as narrative north star.
+- External storyline Google Doc updated into a fillable map-based skeleton; use `The Bell That Rings Before Dawn` and Priest Gensui's prophecy as the current narrative north star.
 
 Next:
 - Task 3 is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.
 
 ## Changelog
+
+### 2026-06-28 - Codex Map Story Skeleton & Gensui Prophecy
+
+- Agent: Codex. Narrative/storyline handoff follow-up.
+- Files touched: external Google Doc `Edo: The Rising Sun - Kurosawa Storyline`, `docs/GAME_JOURNAL.md`, `src/shared/GameJournal.luau`.
+- Reworked the story doc around the attached map: Farmlands = wound, Market = bargain, Castle = command, Sanctuary = warning, Liminal Fringe = discarded truth, Execution Grounds = public memory.
+- Added a fillable act skeleton, new character web, ending skeletons, dialogue slots, and quest design rules for emotional, philosophical bushido play.
+- Added Priest Gensui as a Shinto-Buddhist prophecy character. His mirror/rice/bell/rope/kegare line predicts the arc but should only fully land after players see the consequences.
+- Verified Google Doc identity, tab `t.0`, current revision readback, prophecy paragraph, heading structure, and no accidental list formatting.
 
 ### 2026-06-28 - Codex Narrative Doc Expansion
 

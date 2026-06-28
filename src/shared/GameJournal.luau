@@ -391,7 +391,8 @@ GameJournal.HandoffState = {
 		"Non-seppuku kill path leaves lineage untouched and notoriety uncleared.",
 		"Studio source was exported into the Rojo tree at C:\\Users\\chuab\\TheQuelledLand.",
 		"Git was initialized on main and origin was configured to https://github.com/TheEmpireRankingBot/edosamurai.git.",
-		"External Google Doc 'Edo: The Rising Sun - Kurosawa Storyline' expanded into the narrative north star: 'The Weight of the Rising Sun'.",
+		"External Google Doc 'Edo: The Rising Sun - Kurosawa Storyline' updated into the current narrative north star: the fillable map-based skeleton 'The Bell That Rings Before Dawn'.",
+		"Priest Gensui is the prophecy hinge; his mirror/rice/bell/rope/kegare line should read like shrine atmosphere first and only become clear after the execution arc resolves.",
 	},
 	next={
 		"Task 3 in the new list is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.",
@@ -406,6 +407,14 @@ GameJournal.HandoffState = {
 -- CHANGELOG
 -- ============================================================================
 GameJournal.Changelog = {
+	{ date="2026-06-28", title="Codex map story skeleton and Gensui prophecy", entries={
+		"Agent: Codex. Narrative/storyline handoff follow-up.",
+		"Files touched: external Google Doc 'Edo: The Rising Sun - Kurosawa Storyline', docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",
+		"Reworked the story doc around the attached map: Farmlands = wound, Market = bargain, Castle = command, Sanctuary = warning, Liminal Fringe = discarded truth, Execution Grounds = public memory.",
+		"Added a fillable act skeleton, new character web, ending skeletons, dialogue slots, and quest design rules for emotional, philosophical bushido play.",
+		"Added Priest Gensui as a Shinto-Buddhist prophecy character; his mirror/rice/bell/rope/kegare line predicts the arc but should only fully land after players see the consequences.",
+		"Verified Google Doc identity, tab t.0, current revision readback, prophecy paragraph, heading structure, and no accidental list formatting.",
+	} },
 	{ date="2026-06-28", title="Codex narrative doc expansion", entries={
 		"Agent: Codex. Narrative/storyline handoff.",
 		"Files touched: external Google Doc 'Edo: The Rising Sun - Kurosawa Storyline', docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",
