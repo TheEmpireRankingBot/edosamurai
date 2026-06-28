@@ -19,7 +19,8 @@ GameJournal.Meta = {
 	genre     = "Edo-period Restricted (18+) Roblox RP",
 	language  = "Luau --!strict, fully typed",
 	layers    = "Foundation + L1 Faction/Economy/Morality + L2 Combat/Duels + L3 NPC/Time/Gather + L4 Game-Feel + L5 Priest/Disaster",
-	lastPass  = "2026-06-28 (Codex Task 2: Seppuku -> Lineage/Inheritance)",
+	lastPass  = "2026-06-28 (Codex Task 2: Seppuku -> Lineage/Inheritance + Rojo/Git handoff)",
+	sourceControl = "origin=https://github.com/TheEmpireRankingBot/edosamurai.git, branch=main",
 	moduleCount = 50,
 }
 
@@ -182,7 +183,7 @@ GameJournal.FeedbackLoops = {
 	{ loop="Duel -> Notoriety/Bounty", status="CONNECTED (stub)",
 		detail="resolveHit -> flagAggression: unsanctioned wilderness hits raise reputation.notoriety + log a BOUNTY stub for a future LawService. Reachable + throttled." },
 	{ loop="Death -> Jisei", status="CONNECTED",
-		detail="CombatService.kill -> _broadcastJisei to all within JISEI_RADIUS. Compose UI exists (press P -> RequestSetJisei); empty poem falls back to DEFAULT_JISEI. (Seppuku is a separate death path not yet built.)" },
+		detail="CombatService.kill -> _broadcastJisei to all within JISEI_RADIUS. Compose UI exists (press P -> RequestSetJisei); empty poem falls back to DEFAULT_JISEI. SeppukuService also broadcasts jisei through CombatService.performCleanDeath without Shura/kill-stat writes." },
 	{ loop="Priest Harae -> Morality", status="CONNECTED",
 		detail="_performHarae gates range+consent+energy+kegare, then moralityService.adjust(target,+12,'harae') and fires PurifyFeel to both. Downed targets consent implicitly." },
 	{ loop="Priest Disaster -> Economy", status="CONNECTED",
@@ -387,13 +388,14 @@ GameJournal.HandoffState = {
 		"Seppuku snapshots 75% current mon into lineage.inheritedMon, clears current mon, clears notoriety, increments generationCount, stores DisplayName/Name as ancestorName, and performs clean self-death with no Shura write.",
 		"Next spawn grants inheritedMon once through EconomyService.addCurrency and zeros inheritedMon before the grant to prevent double-claim on rejoin.",
 		"Non-seppuku kill path leaves lineage untouched and notoriety uncleared.",
+		"Studio source was exported into the Rojo tree at C:\\Users\\chuab\\TheQuelledLand.",
+		"Git was initialized on main and origin was configured to https://github.com/TheEmpireRankingBot/edosamurai.git.",
 	},
 	next={
-		"Commit + push this checkpoint before starting the next numbered task.",
 		"Task 3 in the new list is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.",
 	},
 	todo={
-		"Local /docs/GAME_JOURNAL.md mirror was not present in this Studio-only session; ReplicatedStorage.GameJournal is the updated contract.",
+		"Keep /docs/GAME_JOURNAL.md and ReplicatedStorage.GameJournal aligned after each checkpoint.",
 		"Seppuku animation is a placeholder client hook (SeppukuAnim) until a real animation asset is supplied.",
 	},
 }
@@ -402,6 +404,13 @@ GameJournal.HandoffState = {
 -- CHANGELOG
 -- ============================================================================
 GameJournal.Changelog = {
+	{ date="2026-06-28", title="Codex Rojo/Git handoff", entries={
+		"Agent: Codex. Source-control handoff after Task #2.",
+		"Files touched: docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",
+		"Exported current Studio scripts into the Rojo source tree at C:\\Users\\chuab\\TheQuelledLand.",
+		"Initialized local Git on main, configured origin to https://github.com/TheEmpireRankingBot/edosamurai.git, and prepared the checkpoint for push.",
+		"Commit 35a9ae9 captured the Task 2 Seppuku/Lineage checkpoint before this handoff note.",
+	} },
 	{ date="2026-06-28", title="Codex Task 2 - Seppuku lineage inheritance", entries={
 		"Agent: Codex. Task #2 / Gap #1.",
 		"Files touched: ReplicatedStorage.Config.SeppukuConfig, ServerScriptService.Services.SeppukuService, ServerScriptService.Services.CombatService, StarterPlayer.StarterPlayerScripts.Main.Controllers.SeppukuController, StarterPlayer.StarterPlayerScripts.Main.Controllers.HUDController, ReplicatedStorage.GameJournal.",

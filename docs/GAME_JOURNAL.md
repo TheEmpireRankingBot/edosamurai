@@ -8,7 +8,7 @@ Project: The Quelled Land
 Place: Edo: Rising Sun  
 Genre: Edo-period Restricted (18+) Roblox RP  
 Language: Luau `--!strict`, fully typed  
-Last pass: 2026-06-28, Codex Task 2 - Seppuku -> Lineage/Inheritance
+Last pass: 2026-06-28, Codex Task 2 - Seppuku -> Lineage/Inheritance + Rojo/Git handoff
 
 ## Golden Rules
 
@@ -21,6 +21,17 @@ Last pass: 2026-06-28, Codex Task 2 - Seppuku -> Lineage/Inheritance
 - Fail loud; do not silently continue from corrupted state.
 
 ## Recent Checkpoints
+
+### Codex Rojo/Git Handoff
+
+Status: PASS, local Git checkpoint created and remote configured.
+
+Notes:
+- Studio source was exported into the Rojo tree at `C:\Users\chuab\TheQuelledLand`.
+- Git repository was initialized on `main`.
+- GitHub remote configured as `https://github.com/TheEmpireRankingBot/edosamurai.git`.
+- Commit `35a9ae9` captured the Task 2 Seppuku/Lineage checkpoint before this handoff note.
+- This journal update exists so Claude can see the source-control state before continuing Task 3.
 
 ### Codex Task 2 - Seppuku Lineage Inheritance
 
@@ -111,7 +122,16 @@ Green:
 - Seppuku -> Lineage/Inheritance marked CONNECTED.
 - Data verification restored the live test profile after mutation checks.
 - Rojo source mirror exported from current Studio scripts into `src/`.
+- Git remote configured for `TheEmpireRankingBot/edosamurai`; push checkpoint is the current active handoff step.
 
 Next:
-- Commit and push this checkpoint.
 - Task 3 is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.
+
+## Changelog
+
+### 2026-06-28 - Codex Rojo/Git Handoff
+
+- Agent: Codex. Source-control handoff after Task #2.
+- Files touched: `docs/GAME_JOURNAL.md`, `src/shared/GameJournal.luau`.
+- Exported current Studio scripts into the Rojo source tree at `C:\Users\chuab\TheQuelledLand`.
+- Initialized local Git on `main`, configured origin to `https://github.com/TheEmpireRankingBot/edosamurai.git`, and prepared the checkpoint for push.
