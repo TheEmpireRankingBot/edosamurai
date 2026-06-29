@@ -83,6 +83,17 @@ PriestConfig.Omamori = {
 	},
 } :: { [string]: Omamori }
 
+-- Gofu paper is prepared at the shrine instead of gathered from the wild. It keeps
+-- omamori production in the priest loop and gives talisman_paper a real source.
+PriestConfig.TalismanPaper = {
+	itemId = "talisman_paper",
+	name = "Gofu Paper",
+	monCost = 15,
+	energyCost = 5,
+}
+
+PriestConfig.OMAMORI_TRADE_RANGE = 10 -- studs; priest and buyer must be face-to-face
+
 -- ── Offering box (saisen) ────────────────────────────────────────────
 PriestConfig.SHRINE_FAVOR_START = 100
 PriestConfig.SHRINE_FAVOR_MAX   = 1000

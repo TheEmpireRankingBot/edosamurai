@@ -211,6 +211,30 @@ function PriestService.respondHarae(target: Player, accept: boolean)
 end
 
 -- ── omamori (craft / apply / buff query) ────────────────────────────────
+function PriestService.prepareTalismanPaper(priest: Player)
+	if not isPriest(priest) then riteFail(priest, "preparePaper", "Only a priest may prepare gofu paper"); return end
+	local def = PriestConfig.TalismanPaper
+	if ensureEnergy(priest) < def.energyCost then riteFail(priest, "preparePaper", "Not enough spiritual energy"); return end
+	if not economyService.removeCurrency(priest, "mon", def.monCost) then
+		riteFail(priest, "preparePaper", "Not enough mon for paper and ink"); return
+	end
+
+	setEnergy(priest, ensureEnergy(priest) - def.energyCost)
+	if not inventoryService.addItem(priest, def.itemId, 1) then
+		economyService.addCurrency(priest, "mon", def.monCost)
+		setEnergy(priest, ensureEnergy(priest) + def.energyCost)
+		riteFail(priest, "preparePaper", "Inventory error"); return
+	end
+
+	Net.fireClient("RiteResult", priest, {
+		rite = "preparePaper",
+		state = "done",
+		name = def.name,
+		amount = def.monCost,
+	})
+	Logger.info(SCOPE, string.format("%s prepared %s", priest.Name, def.itemId))
+end
+
 function PriestService.craftOmamori(priest: Player, omamoriId: string)
 	if not isPriest(priest) then riteFail(priest, "craft", "Only a priest may craft omamori"); return end
 	local om = PriestConfig.Omamori[omamoriId]
@@ -226,6 +250,61 @@ function PriestService.craftOmamori(priest: Player, omamoriId: string)
 	inventoryService.addItem(priest, om.id, 1)
 	Net.fireClient("RiteResult", priest, { rite = "craft", state = "done", omamori = om.id, name = om.name })
 	Logger.info(SCOPE, priest.Name .. " crafted " .. om.id)
+end
+
+function PriestService.sellOmamori(priest: Player, target: Player?, omamoriId: string)
+	if not isPriest(priest) then riteFail(priest, "sellOmamori", "Only a priest may sell omamori"); return end
+	if target == nil then riteFail(priest, "sellOmamori", "Target not found"); return end
+	if target == priest then riteFail(priest, "sellOmamori", "Choose another player"); return end
+	if not inRange(priest, target, PriestConfig.OMAMORI_TRADE_RANGE) then
+		riteFail(priest, "sellOmamori", "Buyer is too far away"); return
+	end
+
+	local om = PriestConfig.Omamori[omamoriId]
+	if om == nil then return end
+	if inventoryService.count(priest, om.id) < 1 then
+		riteFail(priest, "sellOmamori", "You do not have that omamori"); return
+	end
+
+	if not inventoryService.removeItem(priest, om.id, 1) then
+		riteFail(priest, "sellOmamori", "Inventory error"); return
+	end
+
+	local transactionId = string.format(
+		"omamori:%d:%d:%s:%d:%d",
+		target.UserId,
+		priest.UserId,
+		om.id,
+		os.time(),
+		math.floor(os.clock() * 1000)
+	)
+	local paid = economyService.transfer(target, priest, "mon", om.monCost, transactionId)
+	if not paid then
+		inventoryService.addItem(priest, om.id, 1)
+		riteFail(priest, "sellOmamori", target.Name .. " cannot pay"); return
+	end
+
+	if not inventoryService.addItem(target, om.id, 1) then
+		economyService.transfer(priest, target, "mon", om.monCost, transactionId .. ":refund")
+		inventoryService.addItem(priest, om.id, 1)
+		riteFail(priest, "sellOmamori", "Buyer inventory error"); return
+	end
+
+	Net.fireClient("RiteResult", priest, {
+		rite = "sellOmamori",
+		state = "done",
+		name = om.name,
+		targetName = target.Name,
+		amount = om.monCost,
+	})
+	Net.fireClient("RiteResult", target, {
+		rite = "receiveOmamori",
+		state = "done",
+		name = om.name,
+		targetName = priest.Name,
+		amount = om.monCost,
+	})
+	Logger.info(SCOPE, string.format("%s sold %s to %s for %d mon", priest.Name, om.id, target.Name, om.monCost))
 end
 
 function PriestService._pushBuffs(player: Player)
@@ -372,9 +451,23 @@ function PriestService:Start()
 		PriestService.respondHarae(player, (payload :: any).accept)
 	end)
 
+	Net.registerEvent("RequestPrepareTalismanPaper", Validate.shape({}), { rate = 2 })
+	Net.onEvent("RequestPrepareTalismanPaper", function(player: Player, _payload: any)
+		PriestService.prepareTalismanPaper(player)
+	end)
+
 	Net.registerEvent("RequestCraftOmamori", Validate.shape({ id = Validate.literal(OMAMORI_IDS) }))
 	Net.onEvent("RequestCraftOmamori", function(player: Player, payload: any)
 		PriestService.craftOmamori(player, (payload :: any).id)
+	end)
+
+	Net.registerEvent("RequestSellOmamori",
+		Validate.shape({ targetId = Validate.integer, id = Validate.literal(OMAMORI_IDS) }),
+		{ rate = 3 }
+	)
+	Net.onEvent("RequestSellOmamori", function(player: Player, payload: any)
+		local p = payload :: { targetId: number, id: string }
+		PriestService.sellOmamori(player, Players:GetPlayerByUserId(p.targetId), p.id)
 	end)
 
 	Net.registerEvent("RequestApplyOmamori", Validate.shape({ id = Validate.literal(OMAMORI_IDS) }))

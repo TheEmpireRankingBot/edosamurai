@@ -106,6 +106,41 @@ local function getHRP(player: Player): BasePart?
 	return if hrp and hrp:IsA("BasePart") then hrp else nil
 end
 
+local function getModelPart(inst: Instance): BasePart?
+	if inst:IsA("BasePart") then
+		return inst
+	end
+	if inst:IsA("Model") then
+		return inst.PrimaryPart or inst:FindFirstChildWhichIsA("BasePart", true)
+	end
+	return nil
+end
+
+local function isNearVendor(player: Player, vendorId: string): boolean
+	local hrp = getHRP(player)
+	if hrp == nil then return false end
+
+	for _, rec in npcs do
+		if rec.vendorId == vendorId and rec.primary.Parent ~= nil then
+			if (rec.primary.Position - hrp.Position).Magnitude <= VendorDefs.INTERACTION_RANGE then
+				return true
+			end
+		end
+	end
+
+	local vendorDef = NPCDefs.Classes.Vendor
+	if vendorDef == nil then return false end
+	for _, inst in CollectionService:GetTagged(vendorDef.tag) do
+		if inst:GetAttribute("VendorId") ~= vendorId then continue end
+		local part = getModelPart(inst)
+		if part and (part.Position - hrp.Position).Magnitude <= VendorDefs.INTERACTION_RANGE then
+			return true
+		end
+	end
+
+	return false
+end
+
 local function nearestPlayer(position: Vector3, radius: number): Player?
 	local nearest: Player? = nil
 	local nearestDist = radius
@@ -412,14 +447,24 @@ function NPCService:Start()
 	Net.registerEvent("RequestVendorBuy", buySellShape, { rate = 5 })
 	Net.onEvent("RequestVendorBuy", function(player: Player, payload: any)
 		local p = payload :: { vendorId: string, itemId: string, qty: number }
-		local ok, msg = NPCService.buyFromVendor(player, p.vendorId, p.itemId, p.qty)
+		local ok, msg
+		if not isNearVendor(player, p.vendorId) then
+			ok, msg = false, "Too far from vendor"
+		else
+			ok, msg = NPCService.buyFromVendor(player, p.vendorId, p.itemId, p.qty)
+		end
 		Net.fireClient("RequestVendorBuy", player, { ok = ok, msg = msg, vendorId = p.vendorId })
 	end)
 
 	Net.registerEvent("RequestVendorSell", buySellShape, { rate = 5 })
 	Net.onEvent("RequestVendorSell", function(player: Player, payload: any)
 		local p = payload :: { vendorId: string, itemId: string, qty: number }
-		local ok, msg = NPCService.sellToVendor(player, p.vendorId, p.itemId, p.qty)
+		local ok, msg
+		if not isNearVendor(player, p.vendorId) then
+			ok, msg = false, "Too far from vendor"
+		else
+			ok, msg = NPCService.sellToVendor(player, p.vendorId, p.itemId, p.qty)
+		end
 		Net.fireClient("RequestVendorSell", player, { ok = ok, msg = msg, vendorId = p.vendorId })
 	end)
 end

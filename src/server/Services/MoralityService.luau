@@ -102,6 +102,9 @@ function MoralityService.applyKill(killer: Player, victim: Player, ctx: KillCont
 	-- Append to shura_kills log
 	local killLog = (dataService.get(killer, "shura_kills") :: { any }?) or {}
 	table.insert(killLog, { victimName = victim.Name, timestamp = os.time(), wasHelpless = ctx.wasHelpless })
+	while #killLog > MoralityConfig.PHANTOM_LOG_LIMIT do
+		table.remove(killLog, 1)
+	end
 	dataService.set(killer, "shura_kills", killLog)
 
 	-- Combat stats (totalKills/honorableKills) are owned by CombatService.kill —
@@ -121,6 +124,25 @@ end
 function MoralityService.getCombatModifiers(player: Player): { damageBonus: number, accuracyPenalty: number }
 	local tier = MoralityService.getTier(player)
 	return { damageBonus = tier.damageBonus, accuracyPenalty = tier.accuracyPenalty }
+end
+
+function MoralityService.getRecentShuraKills(player: Player, limit: number?): { any }
+	local killLog = (dataService.get(player, "shura_kills") :: { any }?) or {}
+	local max = math.clamp(limit or MoralityConfig.PHANTOM_RENDER_LIMIT, 1, MoralityConfig.PHANTOM_LOG_LIMIT)
+	local out = {}
+	if #killLog == 0 then return out end
+
+	for i = #killLog, math.max(1, #killLog - max + 1), -1 do
+		local entry = killLog[i]
+		if type(entry) == "table" then
+			table.insert(out, {
+				victimName = tostring(entry.victimName or "Unknown"),
+				timestamp = entry.timestamp,
+				wasHelpless = entry.wasHelpless == true,
+			})
+		end
+	end
+	return out
 end
 
 function MoralityService.startMeditation(player: Player)
@@ -169,6 +191,10 @@ end
 function MoralityService.fireMoralityDisplay(player: Player)
 	local tier  = MoralityService.getTier(player)
 	local score = (dataService.get(player, "gi_shura") :: number?) or 0
+	local phantomVictims = {}
+	if tier.phantoms then
+		phantomVictims = MoralityService.getRecentShuraKills(player, MoralityConfig.PHANTOM_RENDER_LIMIT)
+	end
 	Net.fireClient("UpdateMoralityDisplay", player, {
 		score      = score,
 		tierName   = tier.name,
@@ -176,6 +202,7 @@ function MoralityService.fireMoralityDisplay(player: Player)
 		vignette   = tier.vignette,
 		handShake  = tier.handShake,
 		phantoms   = tier.phantoms,
+		phantomVictims = phantomVictims,
 	})
 end
 

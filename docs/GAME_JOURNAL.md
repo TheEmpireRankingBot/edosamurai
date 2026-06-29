@@ -8,7 +8,7 @@ Project: The Quelled Land
 Place: Edo: Rising Sun  
 Genre: Edo-period Restricted (18+) Roblox RP  
 Language: Luau `--!strict`, fully typed  
-Last pass: 2026-06-28, Codex map-story skeleton + Gensui prophecy handoff
+Last pass: 2026-06-29, Codex game-test readiness gap closure
 
 ## Golden Rules
 
@@ -21,6 +21,56 @@ Last pass: 2026-06-28, Codex map-story skeleton + Gensui prophecy handoff
 - Fail loud; do not silently continue from corrupted state.
 
 ## Recent Checkpoints
+
+### Codex Game-Test Readiness Gap Closure (2026-06-29)
+
+Status: PASS, Studio synced live, boot-green.
+
+Closed the remaining code-side gap list:
+- Omamori acquisition and sale path: priests can prepare `talisman_paper` as shrine-prepared Gofu Paper, craft all four omamori, and sell a crafted charm to a nearby player through `EconomyService.transfer`.
+- Phantom system: `shura_kills` is now trimmed and read by `MoralityService`; T4+ Shura payloads include recent victim names and `MoralityController` renders local grey phantom shadows.
+- `honorableDuelWin`: sparing a downed duel opponent now ends the duel with reason `honorable`, waking the existing +3 Gi reward.
+- Money changer: added tagged `MoneyChanger` prompt support, a Studio fallback `MoneyChangerSpot`, and a `MoneyChangerController` UI for `RequestExchange` with the existing 5% fee.
+- Vendor exploit consistency: `RequestVendorBuy` / `RequestVendorSell` now reject out-of-range calls server-side.
+
+Files touched:
+- `EconomyService`, `MoralityService`, `NPCService`, `PriestService`, `CombatService`
+- `PriestController`, `MoralityController`, `MoneyChangerController`
+- `EconomyConfig`, `MoralityConfig`, `PriestConfig`, `VendorDefs`
+- journals
+
+Verification:
+- Studio source sync imported 18 changed scripts/configs/controllers/journal entries into `Edo: Rising Sun`.
+- Boot-green: all services/controllers loaded, including `MoneyChangerController`; new remotes registered: `RequestPrepareTalismanPaper`, `RequestSellOmamori`, `RequestExchange`, `RequestVendorBuy`, `RequestVendorSell`.
+- Server probe: no missing remotes; `MoralityService.getRecentShuraKills` present; `PriestConfig.TalismanPaper.itemId == "talisman_paper"`; `VendorDefs.INTERACTION_RANGE == 14`; Studio fallback `MoneyChangerSpot` exists, is tagged `MoneyChanger`, and has `MoneyChangerPrompt`; live `GameJournal.KnownGaps[1]` says no remaining prior code-side gaps.
+- Console had only pre-existing asset permission warnings for asset `86889305034722`, not script/runtime errors.
+
+### Codex Combat Unequip + Dummy Armor Selector (2026-06-29)
+
+Status: PASS, Studio patched live, boot-green.
+
+Fixed:
+- Physical Tool equip/unequip now drives `equipped.weapon` through the existing CombatService data flow.
+- When a Katana Tool leaves the character and no other recognized Tool is equipped, the server normalizes the player to `Unarmed`.
+- CombatController and SoloDummyHitController mirror Tool equip/unequip locally so `RequestMeleeHit` / `RequestSoloDummyHit` no longer keep sending stale Katana after unequip.
+- Solo dummy now has a Studio-only armor selector UI (`SoloDummyArmorSelector`) and hotkeys: `Z=light`, `X=medium`, `C=heavy`.
+- New validated remote: `RequestSoloDummyArmorClass` -> SoloDummyCombatHarness, using `CombatConfig.ArmorClassNames`.
+
+Verification:
+- Live Studio scripts patched directly because Rojo had not yet synced these new source edits.
+- Studio boot-green: `RequestSoloDummyArmorClass` registered, CombatService online, CombatController online, no new runtime errors.
+- Console showed current player normalized to `Unarmed` on spawn.
+
+### Edo Armour Classes (Claude, 2026-06-29)
+
+Status: DONE, boot-green, live-verified.
+
+Replaced the flat 40% armour reduction with Edo-period armour classes so fists are no longer a quick KO and armour scales by class:
+- **Light** (Tatami-gusoku / kusari katabira) = 15% reduction — fragile; heavier foes overwhelm.
+- **Medium** (Dō-maru / munition okegawa-dō) = 60% — survivable; clean kills need tactical gap hits.
+- **Heavy** (Tōsei-gusoku full harness) = 93% — near-immune to normal blows; only a GapZone hit, a Kanabo (ignoresArmor), or downing+executing breaks it.
+
+`equipped.armor` now stores the class key; `CombatConfig.getArmorReduction()` resolves it (unknown legacy value → 0.40 fallback). GapZone hits + Kanabo still bypass armour for full damage = the skill kill path (historically the neck/armpit gaps a swordsman aimed for). Damage (HP 100): fists none 15 / light 13 / medium 6 / **heavy 1**; Katana torso none 55 / light 47 / medium 22 / **heavy 4**; any GapZone 55; Kanabo 70. Verified live via the solo dummy (heavy Katana torso=4, Naginata torso=3, GapZone=55 → downs in 2).
 
 ### Codex Narrative Doc Expansion
 
@@ -109,27 +159,23 @@ Verification:
 - Death -> Jisei: CONNECTED.
 - Priest Harae -> Morality: CONNECTED.
 - Priest Disaster -> Economy: CONNECTED.
-- Omamori -> consuming systems: CONNECTED on buff-read side; acquisition/sale path still open.
+- Omamori -> consuming systems/acquisition/sale: CONNECTED.
 - Offering -> ShrineFavor -> Disaster: CONNECTED.
 - Time -> NPC/Vendor/Disaster: CONNECTED.
 - Economic floor: CONNECTED.
 - Morality -> World reaction: CONNECTED.
 - Seppuku -> Lineage/Inheritance: CONNECTED.
-- Phantom system: GAP.
+- Phantom system: CONNECTED.
 
 ## Remaining Known Gaps
 
-1. Omamori acquisition + sale path.
-2. Phantom system reading `shura_kills`.
-3. `honorableDuelWin` Gi gain is unreachable.
-4. Money-changer UI for `RequestExchange`.
-5. Vendor remotes need server-side proximity checks.
+None from the prior code-side gap list. Builder/content TODO remains: place real map-authored `MoneyChanger`, priest, shrine, safe-zone, and meditation tags instead of relying on Studio fallback/test pieces.
 
 ## Handoff State
 
-Updated: 2026-06-28  
+Updated: 2026-06-29
 Agent: Codex  
-Current task completed: Task 2 - Gap #1, Seppuku + Lineage/Inheritance
+Current task completed: game-test readiness gap closure
 
 Green:
 - Boot-green with SeppukuService online and remotes registered.
@@ -138,11 +184,46 @@ Green:
 - Rojo source mirror exported from current Studio scripts into `src/`.
 - Git remote configured for `TheEmpireRankingBot/edosamurai`; push checkpoint is the current active handoff step.
 - External storyline Google Doc updated into a fillable map-based skeleton; use `The Bell That Rings Before Dawn` and Priest Gensui's prophecy as the current narrative north star.
+- Tool unequip state is now server-authoritative: no recognized Tool in the character means `equipped.weapon = "Unarmed"`.
+- Solo dummy armor can be changed in Studio via UI buttons or `Z/X/C`; the harness writes `SoloArmorDummy.ArmorClass` and resets HP.
+- Omamori loop is reachable end-to-end: prepare Gofu Paper -> craft -> sell nearby -> buyer applies buff.
+- Phantom visuals read `shura_kills` for T4+ Shura players.
+- Honorable duel spare now grants the existing `honorableDuelWin` Gi reward.
+- Money changer UI calls `RequestExchange` near a tagged changer and preserves the existing 5% fee.
+- Vendor buy/sell remotes now validate proximity server-side.
 
 Next:
-- Task 3 is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.
+- Commit and push this checkpoint.
 
 ## Changelog
+
+### 2026-06-29 - Codex Game-Test Readiness Gap Closure
+
+- Agent: Codex. Closed the remaining code-side gaps from the journal.
+- Files touched: `EconomyService`, `MoralityService`, `NPCService`, `PriestService`, `CombatService`, `PriestController`, `MoralityController`, `MoneyChangerController`, `EconomyConfig`, `MoralityConfig`, `PriestConfig`, `VendorDefs`, journals.
+- Added priest-side Gofu Paper preparation (`RequestPrepareTalismanPaper`) and nearby omamori sale (`RequestSellOmamori`) using `EconomyService.transfer` and inventory rollback on failure.
+- Added Shura phantom payload/rendering from `shura_kills`, activated only for tiers whose config enables `phantoms`.
+- Connected duel spare wins to `reason="honorable"` so `honorableDuelWin` Gi gain is reachable.
+- Added money-changer prompt/UI path for `RequestExchange`; Studio fallback creates `MoneyChangerSpot` if no tagged changer exists.
+- Added server-side vendor proximity rejection for buy/sell remotes.
+- Verified live boot-green after syncing 18 scripts into Studio; server probe confirmed remotes, Gofu Paper config, MoneyChanger prompt/tag, vendor range, phantom API, and journal gap status.
+
+### 2026-06-29 - Codex Combat Unequip + Solo Dummy Armor Selector
+
+- Agent: Codex. Player bugfix handoff after Claude armor-class pass.
+- Files touched: `CombatService`, `CombatController`, `SoloDummyHitController`, `SoloDummyCombatHarness`, `docs/GAME_JOURNAL.md`, `src/shared/GameJournal.luau`.
+- Fixed stale weapon state after Tool unequip: CombatService now resolves recognized Tool names/attributes, updates `equipped.weapon` on character Tool add/remove, and normalizes to `Unarmed` when no recognized Tool remains equipped.
+- CombatController and SoloDummyHitController now mirror physical Tool equip/unequip locally so client hit requests do not keep sending stale Katana after unequip.
+- Added `RequestSoloDummyArmorClass` and a Studio-only solo dummy armor selector UI with `light`, `medium`, and `heavy` buttons plus hotkeys `Z/X/C`.
+- Live Studio was patched directly; boot verification showed the new remote registered and all Loader services/controllers online with no new runtime errors.
+
+### 2026-06-29 - Edo armour classes (Claude)
+
+- Replaced flat `ARMOR_DAMAGE_REDUCTION` (0.40) with `CombatConfig.ArmorClasses` (light 15% / medium 60% / heavy 93%); added `CombatConfig.getArmorReduction(value)` (nil/none→0, known class→its reduction, unknown legacy value→0.40 fallback).
+- `CombatService.resolveHit` now reduces a normal hit by the class reduction; GapZone hits and Kanabo (`ignoresArmor`) still bypass armour for full damage.
+- `equipped.armor` stores the class key. Test harnesses read an `ArmorClass` (solo dummy) / `CombatTestArmorClass` (2-player dummy) attribute, default heavy.
+- Files: `CombatConfig`, `CombatService`, `SoloDummyCombatHarness`, `CombatTestHarness`, `GameJournal`.
+- Verified live: `getArmorReduction` unit test (0/.15/.60/.93, legacy .40) + solo-dummy integration (heavy Katana torso=4, Naginata torso=3, GapZone=55). Boot green, 14 services + 17 controllers.
 
 ### 2026-06-28 - Codex Map Story Skeleton & Gensui Prophecy
 

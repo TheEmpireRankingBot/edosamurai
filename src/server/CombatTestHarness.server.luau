@@ -74,10 +74,14 @@ local function flagArmored(player: Player)
 			waited += 0.2
 		end
 		if DataService.getProfile(player) == nil then return end
+		-- Set a CombatTestArmorClass attribute (light/medium/heavy) on the dummy player
+		-- to test each Edo armour class; defaults to heavy.
+		local attr = player:GetAttribute("CombatTestArmorClass")
+		local armorClass = if type(attr) == "string" then attr else "heavy"
 		local equipped = DataService.get(player, "equipped") or {}
-		equipped.armor = "test_armor"
+		equipped.armor = armorClass
 		DataService.set(player, "equipped", equipped)
-		print(string.format("[%s] %s flagged armored (equipped.armor=test_armor)", SCOPE, player.Name))
+		print(string.format("[%s] %s flagged armored (equipped.armor=%s)", SCOPE, player.Name, armorClass))
 	end)
 end
 

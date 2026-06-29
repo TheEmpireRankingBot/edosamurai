@@ -83,6 +83,46 @@ local function getHumanoid(player: Player): Humanoid?
 	return (char and char:FindFirstChildOfClass("Humanoid")) :: Humanoid?
 end
 
+local function weaponNameFromTool(tool: Tool): string?
+	local rawWeapon = tool:GetAttribute("weaponType")
+	if type(rawWeapon) ~= "string" then
+		rawWeapon = tool:GetAttribute("WeaponType")
+	end
+	if type(rawWeapon) == "string" and CombatConfig.Weapons[rawWeapon] ~= nil then
+		return rawWeapon
+	end
+	if CombatConfig.Weapons[tool.Name] ~= nil then
+		return tool.Name
+	end
+	if tool.Name == "Wakizashi" then
+		return "Unarmed"
+	end
+	return nil
+end
+
+local function storedWeapon(player: Player): string
+	local equipped = dataService.get(player, "equipped") :: any
+	local weaponName = if equipped and type(equipped.weapon) == "string" then equipped.weapon else "Unarmed"
+	if CombatConfig.Weapons[weaponName] == nil then
+		return "Unarmed"
+	end
+	return weaponName
+end
+
+local function characterToolWeapon(player: Player): string?
+	local char = player.Character
+	if char == nil then return nil end
+	for _, child in char:GetChildren() do
+		if child:IsA("Tool") then
+			local weaponName = weaponNameFromTool(child :: Tool)
+			if weaponName ~= nil then
+				return weaponName
+			end
+		end
+	end
+	return nil
+end
+
 -- Mirror server-authoritative health onto the Humanoid for the health bar / ragdoll.
 -- Never lets the Humanoid hit 0 from melee (that is what the downed state is for) —
 -- only CombatService.kill sets Humanoid.Health = 0.
@@ -333,10 +373,12 @@ function CombatService.resolveHit(attacker: Player, target: Player, weaponType: 
 	local damage = weapon.damage
 
 	if not weapon.ignoresArmor then
-		local tEquip   = dataService.get(target, "equipped") :: any
-		local hasArmor = tEquip ~= nil and tEquip.armor ~= nil
-		if hasArmor and not CombatService._isGapHit(target, hitPosition) then
-			damage *= (1 - CombatConfig.ARMOR_DAMAGE_REDUCTION)
+		local tEquip     = dataService.get(target, "equipped") :: any
+		local armorClass = (tEquip and tEquip.armor) :: string?
+		local reduction  = CombatConfig.getArmorReduction(armorClass)  -- Edo armour class
+		-- A GapZone hit (the skilled neck/armpit strike) bypasses armour entirely.
+		if reduction > 0 and not CombatService._isGapHit(target, hitPosition) then
+			damage *= (1 - reduction)
 		end
 	end
 
@@ -477,7 +519,7 @@ function CombatService.resolveDownedChoice(attacker: Player, victim: Player, cho
 		CombatService._revive(victim)
 		moralityService.applyGi(attacker, "spareDowned")
 		if duelService.areDueling(attacker, victim) then
-			duelService.endDuelBetween(attacker, victim, "yield")
+			duelService.endDuelBetween(attacker, victim, "honorable")
 		end
 	end
 end
@@ -530,10 +572,13 @@ end
 function CombatService.equipWeapon(player: Player, weaponName: string)
 	if CombatConfig.Weapons[weaponName] == nil then return end
 	local equipped = (dataService.get(player, "equipped") :: any) or {}
+	local previousWeapon = equipped.weapon
 	equipped.weapon = weaponName
 	dataService.set(player, "equipped", equipped)
 	Net.fireClient("CombatLoadout", player, { weapon = weaponName })
-	Logger.info(SCOPE, player.Name .. " equipped " .. weaponName)
+	if previousWeapon ~= weaponName then
+		Logger.info(SCOPE, player.Name .. " equipped " .. weaponName)
+	end
 end
 
 function CombatService.performCleanDeath(victim: Player, reason: string)
@@ -642,10 +687,37 @@ function CombatService._onCharacter(player: Player, char: Model)
 
 	CombatService._pushStamina(player)
 
+	char.ChildAdded:Connect(function(child: Instance)
+		if not child:IsA("Tool") then return end
+		local weaponName = weaponNameFromTool(child :: Tool)
+		if weaponName ~= nil then
+			CombatService.equipWeapon(player, weaponName)
+		end
+	end)
+
+	char.ChildRemoved:Connect(function(child: Instance)
+		if not child:IsA("Tool") then return end
+		local removedWeapon = weaponNameFromTool(child :: Tool)
+		if removedWeapon == nil then return end
+		task.defer(function()
+			local equippedToolWeapon = characterToolWeapon(player)
+			if equippedToolWeapon ~= nil then
+				CombatService.equipWeapon(player, equippedToolWeapon)
+			elseif storedWeapon(player) == removedWeapon then
+				CombatService.equipWeapon(player, "Unarmed")
+			end
+		end)
+	end)
+
+	local initialToolWeapon = characterToolWeapon(player)
+	if initialToolWeapon ~= nil then
+		CombatService.equipWeapon(player, initialToolWeapon)
+	elseif storedWeapon(player) ~= "Unarmed" then
+		CombatService.equipWeapon(player, "Unarmed")
+	end
+
 	-- Tell the client its current weapon so RequestMeleeHit sends a matching weaponType.
-	local equipped   = dataService.get(player, "equipped") :: any
-	local weaponName = (equipped and equipped.weapon) or "Unarmed"
-	Net.fireClient("CombatLoadout", player, { weapon = weaponName })
+	Net.fireClient("CombatLoadout", player, { weapon = storedWeapon(player) })
 end
 
 -- ── Heartbeat: stagger/dodge expiry + stamina regen ──────────────────────────

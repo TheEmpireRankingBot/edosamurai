@@ -11,6 +11,8 @@ export type VendorDef  = { id: string, name: string, stock: { StockEntry } }
 
 local VendorDefs = {}
 
+VendorDefs.INTERACTION_RANGE = 14
+
 VendorDefs.Defs = {
 	rice_merchant = {
 		id = "rice_merchant",

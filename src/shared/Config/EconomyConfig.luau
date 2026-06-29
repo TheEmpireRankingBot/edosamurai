@@ -25,4 +25,9 @@ EconomyConfig.CHANGER_FEE     = 0.05   -- 5% of output destroyed (gold sink)
 EconomyConfig.MAX_MON         = Constants.MAX_MON  -- reference foundation
 EconomyConfig.TRANSACTION_RATE = 5     -- remote calls/sec for economy events
 
+EconomyConfig.MONEY_CHANGER_TAG = "MoneyChanger"
+EconomyConfig.MONEY_CHANGER_PROMPT_NAME = "MoneyChangerPrompt"
+EconomyConfig.MONEY_CHANGER_RANGE = 14
+EconomyConfig.MONEY_CHANGER_FALLBACK_IN_STUDIO = true
+
 return EconomyConfig

@@ -45,6 +45,7 @@ local toast:        TextLabel?
 local misogiBar:    Frame?
 local misogiFill:   Frame?
 local craftPanel:   Frame?
+local sellPanel:    Frame?
 local consentPanel: Frame?
 local consentLabel: TextLabel?
 
@@ -67,6 +68,23 @@ local function makeButton(parent: Instance, order: number, text: string): TextBu
 	b.Parent = parent
 	local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 4); c.Parent = b
 	return b
+end
+
+local function showToast(text: string, color: Color3)
+	if toast == nil then return end
+	toast.Text = text; toast.TextColor3 = color; toast.TextTransparency = 0
+	TweenService:Create(toast, TweenInfo.new(2.2, Enum.EasingStyle.Sine), { TextTransparency = 1 }):Play()
+end
+
+local function getPlayerUnderMouse(): Player?
+	local m = player:GetMouse()
+	local target = m.Target
+	if target == nil then return nil end
+	local model = target:FindFirstAncestorOfClass("Model")
+	if model == nil then return nil end
+	local other = Players:GetPlayerFromCharacter(model)
+	if other == nil or other == player then return nil end
+	return other
 end
 
 local function build()
@@ -106,7 +124,7 @@ local function build()
 
 	-- rite menu (right of the bars)
 	local menu = Instance.new("Frame")
-	menu.Size = UDim2.fromOffset(180, 150); menu.Position = UDim2.new(0, 8, 0.5, -16)
+	menu.Size = UDim2.fromOffset(180, 188); menu.Position = UDim2.new(0, 8, 0.5, -16)
 	menu.BackgroundColor3 = INK; menu.BackgroundTransparency = 0.35; menu.BorderSizePixel = 0
 	menu.Parent = g
 	local ml = Instance.new("UIListLayout"); ml.Padding = UDim.new(0, 4); ml.SortOrder = Enum.SortOrder.LayoutOrder; ml.Parent = menu
@@ -115,6 +133,9 @@ local function build()
 	hint.LayoutOrder = 0; hint.Size = UDim2.new(1,0,0,30); hint.BackgroundTransparency = 1
 	hint.Text = "Rites of the Kannushi"; hint.TextColor3 = GOLD; hint.TextSize = 13; hint.Font = Enum.Font.Antique
 	hint.TextWrapped = true; hint.Parent = menu
+	local paperBtn = makeButton(menu, 3, "Prepare Gofu Paper")
+	local sellBtn = makeButton(menu, 4, "Sell Omamori")
+	paperBtn.Activated:Connect(function() Net.fireServer("RequestPrepareTalismanPaper", {}) end)
 	local haraeHint = makeButton(menu, 1, "Harae — aim + press H")
 	haraeHint.AutoButtonColor = false
 	local craftBtn = makeButton(menu, 2, "Craft Omamori ▾")
@@ -136,6 +157,31 @@ local function build()
 	end
 	craftPanel = craft
 	craftBtn.Activated:Connect(function() craft.Visible = not craft.Visible end)
+
+	-- sale sub-panel: priest points at a nearby buyer, server validates range/payment/item.
+	local sell = Instance.new("Frame")
+	sell.Size = UDim2.fromOffset(240, 150); sell.Position = UDim2.new(0, 424, 0.5, -16)
+	sell.BackgroundColor3 = INK; sell.BackgroundTransparency = 0.3; sell.BorderSizePixel = 0
+	sell.Visible = false; sell.Parent = g
+	local sl = Instance.new("UIListLayout"); sl.Padding = UDim.new(0,4); sl.SortOrder = Enum.SortOrder.LayoutOrder; sl.Parent = sell
+	local spad = Instance.new("UIPadding"); spad.PaddingLeft = UDim.new(0,8); spad.PaddingRight = UDim.new(0,8); spad.PaddingTop = UDim.new(0,8); spad.Parent = sell
+	local sellOrder = 1
+	for id, om in PriestConfig.Omamori do
+		local b = makeButton(sell, sellOrder, "Sell " .. om.name .. " (" .. tostring(om.monCost) .. " mon)")
+		b.TextSize = 11
+		local capId = id
+		b.Activated:Connect(function()
+			local target = getPlayerUnderMouse()
+			if target == nil then
+				showToast("Aim at a nearby buyer.", BLOOD)
+				return
+			end
+			Net.fireServer("RequestSellOmamori", { id = capId, targetId = target.UserId })
+		end)
+		sellOrder += 1
+	end
+	sellPanel = sell
+	sellBtn.Activated:Connect(function() sell.Visible = not sell.Visible end)
 
 	-- misogi progress bar (center)
 	local mb = Instance.new("Frame")
@@ -171,12 +217,6 @@ local function build()
 	gui = g
 end
 
-local function showToast(text: string, color: Color3)
-	if toast == nil then return end
-	toast.Text = text; toast.TextColor3 = color; toast.TextTransparency = 0
-	TweenService:Create(toast, TweenInfo.new(2.2, Enum.EasingStyle.Sine), { TextTransparency = 1 }):Play()
-end
-
 local function becomePriest()
 	if isPriest then return end
 	isPriest = true
@@ -198,17 +238,6 @@ local function purifyFeel()
 		s.SoundId = "rbxasset://sounds/bell.wav"; s.Volume = 0.6; s.Parent = SoundService; s:Play()
 		Debris:AddItem(s, 3)
 	end)
-end
-
-local function getPlayerUnderMouse(): Player?
-	local m = player:GetMouse()
-	local target = m.Target
-	if target == nil then return nil end
-	local model = target:FindFirstAncestorOfClass("Model")
-	if model == nil then return nil end
-	local other = Players:GetPlayerFromCharacter(model)
-	if other == nil or other == player then return nil end
-	return other
 end
 
 function PriestController:Init()
@@ -251,6 +280,12 @@ function PriestController:Init()
 			showToast(tostring(p.targetName) .. " refused purification", BLOOD)
 		elseif p.state == "done" and p.rite == "craft" then
 			showToast("Crafted " .. tostring(p.name), GOLD)
+		elseif p.state == "done" and p.rite == "preparePaper" then
+			showToast("Prepared " .. tostring(p.name), GOLD)
+		elseif p.state == "done" and p.rite == "sellOmamori" then
+			showToast("Sold " .. tostring(p.name) .. " to " .. tostring(p.targetName), GOLD)
+		elseif p.state == "done" and p.rite == "receiveOmamori" then
+			showToast("Received " .. tostring(p.name), GOLD)
 		elseif p.state == "done" and p.rite == "offering" then
 			showToast("Offered " .. tostring(p.amount) .. " mon to the kami", GOLD)
 		end

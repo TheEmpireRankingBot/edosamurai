@@ -45,9 +45,30 @@ local function resetDummy(dummy: Model)
 	healthByDummy[dummy] = CombatConfig.MAX_HEALTH
 	dummy:SetAttribute("Health", CombatConfig.MAX_HEALTH)
 	dummy:SetAttribute("State", "Ready")
+	-- Set this attribute (light/medium/heavy) in the Explorer to test each armour class.
+	if dummy:GetAttribute("ArmorClass") == nil then
+		dummy:SetAttribute("ArmorClass", "heavy")
+	end
 	local torso = getTorso(dummy)
 	if torso then torso.Color = Color3.fromRGB(105, 105, 105) end
-	setBillboard(dummy, string.format("Solo Dummy\nHP %d/%d", CombatConfig.MAX_HEALTH, CombatConfig.MAX_HEALTH))
+	setBillboard(dummy, string.format("Solo Dummy [%s]\nHP %d/%d",
+		tostring(dummy:GetAttribute("ArmorClass")), CombatConfig.MAX_HEALTH, CombatConfig.MAX_HEALTH))
+end
+
+local function setDummyArmorClass(player: Player, armorClass: string)
+	if CombatConfig.ArmorClasses[armorClass] == nil then return end
+	local dummy = getDummy()
+	if dummy == nil then return end
+	dummy:SetAttribute("ArmorClass", armorClass)
+	resetDummy(dummy)
+	print(string.format("[%s] %s set solo dummy armor to %s", SCOPE, player.Name, armorClass))
+	Net.fireClient("SoloDummyFeedback", player, {
+		result = "armor set: " .. armorClass,
+		damage = 0,
+		health = CombatConfig.MAX_HEALTH,
+		state = "Ready",
+		armorClass = armorClass,
+	})
 end
 
 local function isGapHit(dummy: Model, hitPosition: Vector3): boolean
@@ -105,14 +126,20 @@ local function applyHit(player: Player, weaponType: string, hitPosition: Vector3
 	end
 
 	local gap = isGapHit(dummy, hitPosition)
+	local armorAttr = dummy:GetAttribute("ArmorClass")
+	local armorClass = if type(armorAttr) == "string" then armorAttr else nil
+	local reduction = CombatConfig.getArmorReduction(armorClass)
 	local damage = weapon.damage
-	local result = "torso reduced"
+	local result
 	if weapon.ignoresArmor then
-		result = "armor ignored"
+		result = "armor ignored (kanabo)"
 	elseif gap then
 		result = "gap full"
+	elseif reduction > 0 then
+		damage *= (1 - reduction)
+		result = string.format("%s -%d%%", tostring(armorClass), math.floor(reduction * 100 + 0.5))
 	else
-		damage *= (1 - CombatConfig.ARMOR_DAMAGE_REDUCTION)
+		result = "no armor"
 	end
 	damage = math.floor(damage + 0.5)
 
@@ -132,6 +159,7 @@ local function applyHit(player: Player, weaponType: string, hitPosition: Vector3
 		health = health,
 		state = state,
 		gap = gap,
+		armorClass = armorClass,
 	})
 
 	if health <= 0 then
@@ -154,6 +182,14 @@ Net.onEvent("RequestSoloDummyHit", function(player: Player, payload: any)
 	applyHit(player, p.weaponType, p.hitPosition)
 end)
 
+Net.registerEvent("RequestSoloDummyArmorClass", Validate.shape({
+	armorClass = Validate.literal(CombatConfig.ArmorClassNames),
+}))
+Net.onEvent("RequestSoloDummyArmorClass", function(player: Player, payload: any)
+	local p = payload :: { armorClass: string }
+	setDummyArmorClass(player, p.armorClass)
+end)
+
 local initial = getDummy()
 if initial then resetDummy(initial) end
 Players.PlayerAdded:Connect(function()
@@ -161,4 +197,4 @@ Players.PlayerAdded:Connect(function()
 	if dummy then resetDummy(dummy) end
 end)
 
-print("[" .. SCOPE .. "] online. One-player test: equip Katana/Kanabo/Wakizashi and click SoloArmorDummy. Torso=33 Katana, GapZone=55 Katana, Kanabo=70.")
+print("[" .. SCOPE .. "] online. Set SoloArmorDummy.ArmorClass (light/medium/heavy) then equip Katana/Kanabo/Wakizashi and click it. Heavy: Katana torso 4 / gap 55 / Kanabo 70. Medium: Katana torso 22. Light: Katana torso 47.")

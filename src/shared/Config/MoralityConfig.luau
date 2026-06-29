@@ -49,6 +49,8 @@ MoralityConfig.ShuraGains = {
 
 MoralityConfig.MEDITATION_RECOVERY = 8   -- gi_shura points per completed meditation
 MoralityConfig.MEDITATION_DURATION = 30  -- seconds; validated server-side, never trust client
+MoralityConfig.PHANTOM_LOG_LIMIT = 12
+MoralityConfig.PHANTOM_RENDER_LIMIT = 5
 
 -- Social standing derived from gi_shura. Clean score 0 remains Neutral so new
 -- players get normal barks/prices; Honored is earned through positive Gi.

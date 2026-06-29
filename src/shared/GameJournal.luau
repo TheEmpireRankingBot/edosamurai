@@ -19,10 +19,10 @@ GameJournal.Meta = {
 	genre     = "Edo-period Restricted (18+) Roblox RP",
 	language  = "Luau --!strict, fully typed",
 	layers    = "Foundation + L1 Faction/Economy/Morality + L2 Combat/Duels + L3 NPC/Time/Gather + L4 Game-Feel + L5 Priest/Disaster",
-	lastPass  = "2026-06-28 (Codex narrative doc expansion + Task 2 handoff)",
+	lastPass  = "2026-06-29 (Codex game-test readiness gap closure)",
 	sourceControl = "origin=https://github.com/TheEmpireRankingBot/edosamurai.git, branch=main",
 	narrativeDoc = "https://docs.google.com/document/d/14VqOW2mYENI0OAmE8xdFVNCv-wV8s_Am1c1aBv7V0jk",
-	moduleCount = 50,
+	moduleCount = 51,
 }
 
 -- ============================================================================
@@ -88,18 +88,18 @@ GameJournal.SystemManifest = {
 		config="FactionDefs", schema={"faction","rank"}, deps={"DataService","EconomyService"},
 		api={"getFaction","getRank","hasPermission","canChoose","getSpawnTag","teleportToFactionSpawn"} },
 	{ name="EconomyService", kind="service", status="working",
-		purpose="Dupe-safe currency authority. add/remove/transfer/exchange. Changer fee + offering = mon sinks. Pushes balance on join (added this pass).",
-		remotes={"RequestExchange (ORPHAN: no client caller)","UpdateCurrencyDisplay"},
+		purpose="Dupe-safe currency authority. add/remove/transfer/exchange. Changer fee + offering = mon sinks. Adds tagged money-changer prompts, validates proximity, and pushes balance on join.",
+		remotes={"RequestExchange","UpdateCurrencyDisplay"},
 		config="EconomyConfig", schema={"currency"}, deps={"DataService"} },
 	{ name="MoralityService", kind="service", status="working",
-		purpose="Owns gi_shura axis, social standing, kill logging, meditation (server-timed), combat-modifier reads. Pushes corruption visuals on join.",
+		purpose="Owns gi_shura axis, social standing, kill logging, meditation (server-timed), combat-modifier reads, and T4+ phantom victim payloads. Pushes corruption visuals on join.",
 		remotes={"TriggerMeditationStart","TriggerMeditationEnd","UpdateMoralityDisplay"},
-		config="MoralityConfig", schema={"gi_shura","shura_kills(write-only)"}, deps={"DataService"},
-		api={"applyKill","applyGi","adjust","getTier","getMoralityStanding","getCombatModifiers","startMeditation","completeMeditation"} },
+		config="MoralityConfig", schema={"gi_shura","shura_kills"}, deps={"DataService"},
+		api={"applyKill","applyGi","adjust","getTier","getMoralityStanding","getCombatModifiers","getRecentShuraKills","startMeditation","completeMeditation"} },
 
 	-- ---- Layer 2 ----
 	{ name="CombatService", kind="service", status="working for player targets; solo part testing uses Studio-only harness",
-		purpose="Server-authoritative melee. Hit validation (reach/cooldown/stamina/weapon-spoof), block/parry/dodge, armor+GapZone, Shura damage/accuracy, downed->execute/spare, kill+jisei+respawn. Exposes recent-attacker detection and clean self-death for SeppukuService. Reads PriestService buffs. NOTE: production RequestMeleeHit resolves targets through Players:GetPlayerByUserId; loose NPC/part dummies cannot exercise true downed/kill flow without changing combat logic.",
+		purpose="Server-authoritative melee. Hit validation (reach/cooldown/stamina/weapon-spoof), block/parry/dodge, Edo armour classes (light/medium/heavy) + GapZone bypass, Shura damage/accuracy, downed->execute/spare, kill+jisei+respawn. Exposes recent-attacker detection and clean self-death for SeppukuService. Reads PriestService buffs. NOTE: production RequestMeleeHit resolves targets through Players:GetPlayerByUserId; loose NPC/part dummies cannot exercise true downed/kill flow without changing combat logic.",
 		remotes={"RequestMeleeHit","RequestBlock","RequestDodge","RequestExecuteOrSpare","RequestEquipWeapon","RequestSetJisei","HitConfirmed","CombatFeedback","StaminaUpdate","ShowDownedPrompt","EnterDownedState","ExitDownedState","ShowJiseiPoem","CombatLoadout","CombatFeel"},
 		config={"CombatConfig","FeelConfig"}, schema={"equipped","jiseiPoem","stats(totalKills/honorableKills)"},
 		deps={"DataService","DuelService","FactionService","MoralityService","PriestService"},
@@ -123,7 +123,7 @@ GameJournal.SystemManifest = {
 		purpose="World clock (1 real min = 1 game hour). Drives Lighting + onHourChanged/onDayChanged signals.",
 		remotes={"UpdateGameTime"}, signals={"onHourChanged(hour,day)","onDayChanged(day)"} },
 	{ name="NPCService", kind="service", status="working",
-		purpose="Class-scheduled NPCs (anchor walk + barks driven by TimeService) AND the vendor economy (buy/sell, daily restock). Reads MoralityService standing for barks/retreat + vendor buy/sell modifiers; reads Fortune omamori sellPrice buff; broadcastMood for disaster reactions.",
+		purpose="Class-scheduled NPCs (anchor walk + barks driven by TimeService) AND the vendor economy (buy/sell, daily restock). Reads MoralityService standing for barks/retreat + vendor buy/sell modifiers; validates vendor proximity server-side; reads Fortune omamori sellPrice buff; broadcastMood for disaster reactions.",
 		remotes={"GetVendorData","RequestVendorBuy","RequestVendorSell"},
 		config={"NPCDefs","VendorDefs","ItemDefs","MoralityConfig"}, deps={"TimeService","EconomyService","InventoryService","PriestService","MoralityService"} },
 	{ name="GatherService", kind="service", status="working",
@@ -137,8 +137,8 @@ GameJournal.SystemManifest = {
 
 	-- ---- Layer 5 ----
 	{ name="PriestService", kind="service", status="partial (rites need zones; harae needs 2 players)",
-		purpose="Kegare tracking (hooks CombatService.onLethalEvent), misogi (server-timed), harae (purify another's Shura w/ consent), spiritual energy, omamori craft/apply + getBuff, saisen sink + ShrineFavor pool.",
-		remotes={"RequestMisogi","RequestHarae","RequestHaraeConsent","RequestCraftOmamori","RequestApplyOmamori","RequestOffering","UpdateKegare","UpdateEnergy","UpdateShrineFavor","PurifyFeel","HaraeConsentRequest","RiteResult","OmamoriUpdate"},
+		purpose="Kegare tracking (hooks CombatService.onLethalEvent), misogi (server-timed), harae (purify another's Shura w/ consent), spiritual energy, Gofu Paper preparation, omamori craft/sell/apply + getBuff, saisen sink + ShrineFavor pool.",
+		remotes={"RequestMisogi","RequestHarae","RequestHaraeConsent","RequestPrepareTalismanPaper","RequestCraftOmamori","RequestSellOmamori","RequestApplyOmamori","RequestOffering","UpdateKegare","UpdateEnergy","UpdateShrineFavor","PurifyFeel","HaraeConsentRequest","RiteResult","OmamoriUpdate"},
 		config="PriestConfig", schema={"kegare","spiritualEnergy","reputation(renown)"},
 		deps={"DataService","MoralityService","EconomyService","FactionService","InventoryService","CombatService"},
 		api={"getBuff","addKegare","canPerformRite","getShrineFavor","getRecentOfferings","addShrineFavor"} },
@@ -156,11 +156,11 @@ GameJournal.DataSchema = {
 	{ field="faction", type="string?", default="nil", rw="FactionService (rw)" },
 	{ field="rank", type="number", default="1", rw="FactionService (rw)" },
 	{ field="gi_shura", type="number -100..100", default="0", rw="MoralityService (rw); PriestService.harae (w via adjust)" },
-	{ field="shura_kills", type="{any}", default="{}", rw="MoralityService (WRITE-ONLY) — phantom system never reads it (GAP)" },
+	{ field="shura_kills", type="{any}", default="{}", rw="MoralityService writes trimmed recent victim log and reads it for T4+ phantom payloads" },
 	{ field="kegare", type="number 0..100", default="0", rw="PriestService (rw)" },
 	{ field="spiritualEnergy", type="number 0..100", default="100", rw="PriestService (rw)" },
 	{ field="inventory", type="{ {itemId,quantity} }", default="{}", rw="InventoryService (rw); Gather/NPC/Priest (via Inventory)" },
-	{ field="equipped", type="{weapon,armor,tool:string?}", default="{}", rw="CombatService (rw weapon); armor/tool unused yet" },
+	{ field="equipped", type="{weapon,armor,tool:string?}", default="{}", rw="CombatService (rw weapon); armor holds an Edo armour-class key (light/medium/heavy) consumed by resolveHit via CombatConfig.getArmorReduction; tool unused yet" },
 	{ field="reputation", type="{renown,notoriety:number}", default="{0,0}", rw="DuelService (notoriety), PriestService/Disaster (renown)" },
 	{ field="lineage", type="{ancestorName,inheritedMon,generationCount}", default="{nil,0,0}", rw="SeppukuService (rw): ancestorName=DisplayName/Name, inheritedMon one-shot grant, generationCount increments on seppuku" },
 	{ field="jiseiPoem", type="string", default="\"\"", rw="CombatService (rw); default fallback CombatConfig.DEFAULT_JISEI" },
@@ -189,8 +189,8 @@ GameJournal.FeedbackLoops = {
 		detail="_performHarae gates range+consent+energy+kegare, then moralityService.adjust(target,+12,'harae') and fires PurifyFeel to both. Downed targets consent implicitly." },
 	{ loop="Priest Disaster -> Economy", status="CONNECTED",
 		detail="startDisaster -> gatherService.setDisasterModifier (drought slows+reduces yield; blight disables rice node). Quell clears it. Verified live: gather honours the modifier." },
-	{ loop="Omamori -> consuming systems", status="CONNECTED",
-		detail="getBuff is READ by CombatService (staminaRegen, accuracyOffset, damageResist) and NPCService (sellPrice). All 4 effect types consumed. (Caveat: see Gaps — 3/4 recipes need talisman_paper, which has no acquisition path; and there is no P2P path to SELL a charm to another faction.)" },
+	{ loop="Omamori -> consuming systems/acquisition/sale", status="CONNECTED",
+		detail="Priests prepare talisman_paper as shrine Gofu Paper, craft all 4 omamori, sell one to a nearby player through EconomyService.transfer, and the buyer applies it. getBuff is READ by CombatService (staminaRegen, accuracyOffset, damageResist) and NPCService (sellPrice). All 4 effect types are consumed." },
 	{ loop="Offering -> ShrineFavor -> Disaster", status="CONNECTED",
 		detail="offer() destroys mon (hard sink, verified live) and feeds shrineFavor + recentOfferings. DisasterService consumes BOTH: low favor invites a disaster, and recentOfferings buy missed-beat credits in the quell ritual." },
 	{ loop="Time -> NPC/Vendor/Disaster", status="CONNECTED",
@@ -203,8 +203,8 @@ GameJournal.FeedbackLoops = {
 		detail="NPCService reads MoralityService.getMoralityStanding. Honored players get deferential barks + vendor discount/sell bonus; Feared/Shunned players trigger wary/fear barks, Shunned/Feared retreat classes back away via existing move tween, SamuraiPatrol barks suspicion, and Shunned vendors apply SHUNNED_PRICE_PENALTY plus configured sale refusals." },
 	{ loop="Seppuku -> Lineage/Inheritance", status="CONNECTED",
 		detail="RequestSeppuku validates status via SeppukuService: voluntary/disgraced/duel-loss only, blocked by an active recent attacker. Seppuku is clean death: no Shura write, jisei broadcasts through CombatService, 75% current mon snapshots to lineage.inheritedMon, notoriety clears, generationCount increments, and the next spawn grants inheritedMon once then zeros it. Murder/execution paths do not touch lineage or clear notoriety." },
-	{ loop="Phantom system (read shura_kills)", status="GAP",
-		detail="shura_kills is WRITTEN on every Shura kill but never READ. The tier 'phantoms' flag reaches the client (phantomActive) but renders nothing — no shadow-of-past-victims spawns. Net-new — see KnownGaps." },
+	{ loop="Phantom system (read shura_kills)", status="CONNECTED",
+		detail="MoralityService trims and reads shura_kills, includes recent victim names in UpdateMoralityDisplay for T4+ tiers with phantoms=true, and MoralityController renders local grey shadow phantoms around the corrupted player." },
 }
 
 -- ============================================================================
@@ -215,7 +215,7 @@ GameJournal.NetRemotes = {
 	{ name="RequestPing", owner="PlayerService", dir="C2S", validator="shape{message:string}", caller="PingController (Studio-gated stress test)" },
 	{ name="RequestFactionSelect", owner="FactionService", dir="C2S", validator="shape{faction:literal(FactionDefs.Names)}", caller="FactionSelectController" },
 	{ name="RequestResetFaction", owner="FactionService", dir="C2S", validator="shape{}", caller="FactionSelectController dev button (Studio only)" },
-	{ name="RequestExchange", owner="EconomyService", dir="C2S", validator="shape{from:literal(CURRENCIES),amount:positiveInteger}", caller="NONE (orphan — money-changer UI not built)" },
+	{ name="RequestExchange", owner="EconomyService", dir="C2S/S2C", validator="shape{from:literal(CURRENCIES),amount:positiveInteger}", caller="MoneyChangerController (MoneyChangerPrompt; server validates proximity)" },
 	{ name="TriggerMeditationStart", owner="MoralityService", dir="C2S", validator="pass-through", caller="MoralityController (needs a MeditationZone in-world)" },
 	{ name="TriggerMeditationEnd", owner="MoralityService", dir="C2S", validator="pass-through", caller="MoralityController" },
 	{ name="RequestMeleeHit", owner="CombatService", dir="C2S", validator="shape{targetId:integer,weaponType:literal(WeaponNames),hitPosition:vector}", caller="CombatController" },
@@ -226,6 +226,7 @@ GameJournal.NetRemotes = {
 	{ name="RequestSetJisei", owner="CombatService", dir="C2S", validator="shape{poem:string}", caller="JiseiController (compose, press P)" },
 	{ name="RequestSeppuku", owner="SeppukuService", dir="C2S", validator="shape{source:literal(voluntary)}", caller="SeppukuController character menu (press M / Character button)" },
 	{ name="RequestSoloDummyHit", owner="SoloDummyCombatHarness", dir="C2S", validator="shape{weaponType:literal(WeaponNames),hitPosition:vector}", caller="SoloDummyHitController (Studio-only proxy; mirrors armor/gap math, not production combat)" },
+	{ name="RequestSoloDummyArmorClass", owner="SoloDummyCombatHarness", dir="C2S", validator="shape{armorClass:literal(ArmorClassNames)}", caller="SoloDummyHitController Studio-only armor selector (buttons + Z/X/C)" },
 	{ name="RequestDuel", owner="DuelService", dir="C2S", validator="shape{targetId:integer}", caller="DuelController (press T)" },
 	{ name="AcceptDuel", owner="DuelService", dir="C2S", validator="shape{challengerId:integer}", caller="DuelController (accept popup)" },
 	{ name="RequestGather", owner="GatherService", dir="C2S", validator="instanceOf(BasePart)", caller="GatherController (ProximityPrompt)" },
@@ -234,7 +235,9 @@ GameJournal.NetRemotes = {
 	{ name="RequestMisogi", owner="PriestService", dir="C2S", validator="shape{}", caller="PriestController (MisogiZone prompt)" },
 	{ name="RequestHarae", owner="PriestService", dir="C2S", validator="shape{targetId:integer}", caller="PriestController (aim + H)" },
 	{ name="RequestHaraeConsent", owner="PriestService", dir="C2S", validator="shape{accept:boolean}", caller="PriestController consent popup" },
+	{ name="RequestPrepareTalismanPaper", owner="PriestService", dir="C2S", validator="shape{}", caller="PriestController prepare Gofu Paper button" },
 	{ name="RequestCraftOmamori", owner="PriestService", dir="C2S", validator="shape{id:literal(OMAMORI_IDS)}", caller="PriestController craft menu" },
+	{ name="RequestSellOmamori", owner="PriestService", dir="C2S", validator="shape{targetId:integer,id:literal(OMAMORI_IDS)}", caller="PriestController sell menu; server validates priest, range, item, payment" },
 	{ name="RequestApplyOmamori", owner="PriestService", dir="C2S", validator="shape{id:literal(OMAMORI_IDS)}", caller="OmamoriController (pouch, O)" },
 	{ name="RequestOffering", owner="PriestService", dir="C2S", validator="shape{amount:positiveInteger}", caller="OfferingController (SaisenBox prompt)" },
 	{ name="RequestQuellRitual", owner="DisasterService", dir="C2S", validator="shape{}", caller="DisasterController (ShrineGround prompt)" },
@@ -305,6 +308,7 @@ GameJournal.BuilderTags = {
 	{ tag="NPC_SamuraiPatrol", on="Model", present=true, does="Patrolling samurai NPC." },
 	{ tag="NPC_Priest",        on="Model", present=true, does="Shrine priest NPC." },
 	{ tag="NPC_Vendor", on="Model", present=true, does="Trader NPC. MUST ALSO set a string Attribute 'VendorId' = 'rice_merchant' or 'tool_smith' (see VendorDefs) to open a shop." },
+	{ tag="MoneyChanger", on="BasePart or Model", present=true, does="Money changer prompt target. EconomyService adds MoneyChangerPrompt and validates RequestExchange proximity; Studio creates a grey fallback MoneyChangerSpot if none is tagged." },
 
 	-- Gather nodes (BasePart; a ProximityPrompt is auto-added at runtime)
 	{ tag="Node_RicePaddy",   on="BasePart", present=true, does="Yields rice (gatherTime 3, cooldown 10). Disabled by the blight disaster." },
@@ -316,6 +320,7 @@ GameJournal.BuilderTodo = {
 	"PRIORITY: place + tag SafeZone (town hub) — unlocks anti-griefing rules + the killInTown morality nuance.",
 	"PRIORITY: place + tag the priest zones (MisogiZone, ShrineTendZone, SaisenBox, ShrineGround, BloodZone) at the shrine — the entire priest/disaster loop is dark without them.",
 	"Place + tag MeditationZone — unlocks the only non-priest way to recover Gi.",
+	"Place + tag a real MoneyChanger NPC/spot - EconomyService has a Studio fallback, but the map should own the final prompt location.",
 	"Confirm each NPC_Vendor Model has a 'VendorId' string Attribute (rice_merchant / tool_smith).",
 	"Replace grey combat proxy weapons/armor with real equipment only after mechanics are validated; keep the WeaponType keys and GapZone attachment convention unchanged.",
 }
@@ -338,50 +343,38 @@ GameJournal.CombatTestAssets = {
 	armor = {
 		model="ArmorPlaceholder",
 		convention="Two Attachments named EXACTLY 'GapZone' on ArmorTorso (neck + right armpit). CombatService checks attachment name, not CollectionService tag.",
-		expected="Katana torso hit is armor-reduced to 33; Katana GapZone hit is full 55; Kanabo is full 70 regardless of armor.",
+		expected="Armour uses Edo classes (CombatConfig.ArmorClasses). vs HEAVY: Katana torso=4, GapZone=55, Kanabo=70. vs MEDIUM: Katana torso=22. vs LIGHT: Katana torso=47. GapZone + Kanabo always bypass armour for full damage.",
 	},
 	solo = {
 		dummy="Workspace.CombatTestArena.SoloArmorDummy",
 		controller="StarterPlayer.StarterPlayerScripts.SoloDummyHitController",
 		serverHarness="ServerScriptService.SoloDummyCombatHarness",
-		note="Studio-only one-player proxy because production CombatService targets Players by UserId. Left-click SoloArmorDummy with a proxy weapon equipped to test armor/gap/Kanabo math and HP readout. This does NOT test true player downed/execute/spare; use the 2-player harness for that.",
-		verified="2026-06-28: Katana torso=33, Katana GapZone=55, Kanabo torso=70; dummy resets to 100 HP after downed.",
+		note="Studio-only one-player proxy because production CombatService targets Players by UserId. Use the SoloDummyArmorSelector buttons or hotkeys Z=light, X=medium, C=heavy to set SoloArmorDummy.ArmorClass; left-click it with a proxy weapon equipped to test class reduction / gap / Kanabo math and HP readout. Does NOT test true player downed/execute/spare; use the 2-player harness for that.",
+		verified="2026-06-29: armor classes boot-green; Codex added selector UI/RequestSoloDummyArmorClass and stale Tool unequip fix. Expected after Katana unequip: Unarmed damage, not stale Katana.",
 	},
 	multiplayer = {
 		harness="ServerScriptService.CombatTestHarness",
-		note="Studio-only 2-player local-server test. P1 receives proxy weapons; P2 becomes a frozen armored real Player target so production RequestMeleeHit/downed/kill flow can be tested without changing combat logic.",
+		note="Studio-only 2-player local-server test. P1 receives proxy weapons; P2 becomes a frozen armored real Player target (set a 'CombatTestArmorClass' attribute on P2 = light/medium/heavy; defaults heavy) so production RequestMeleeHit/downed/kill flow can be tested without changing combat logic.",
 	},
 }
 
 -- ============================================================================
--- KNOWN GAPS / TODO  (prioritized net-new pieces — NOT built this pass)
+-- KNOWN GAPS / TODO
 -- ============================================================================
 GameJournal.KnownGaps = {
-	{ rank=3, title="Omamori acquisition + sale path",
-		why="3 of 4 omamori need talisman_paper, which has NO source (not gathered/sold/dropped); and there is no way to SELL a crafted charm to another faction. The buff-read side is fully wired, so this is the missing half of the loop.",
-		rec="Make talisman_paper gatherable or vendor-stocked, and add a player stall / vendor consignment so priests can actually sell charms." },
-	{ rank=4, title="Phantom system (read shura_kills)",
-		why="shura_kills is logged on every Shura kill but never read; the tier 'phantoms' flag renders nothing. A specced horror beat is inert.",
-		rec="At T4+ spawn fading shadow-NPCs of logged victims near the corrupted player (cosmetic, client-side from a server-sent recent-victims list)." },
-	{ rank=5, title="honorableDuelWin Gi gain is unreachable",
-		why="endDuel grants honorableDuelWin only when reason=='honorable', but no caller ever passes that (only yield/death/forfeit). The +3 Gi path is dead.",
-		rec="Decide the honorable-victory condition (e.g. winning a duel by SPARING) and pass reason='honorable' there — or remove the unused gain. (Balance call: avoided this pass to not double-dip with spareDowned.)" },
-	{ rank=6, title="Money-changer UI (RequestExchange orphan)",
-		why="EconomyService.RequestExchange is fully built+validated but no client fires it; currency exchange + its 5% sink are unreachable.",
-		rec="Add a changer NPC/UI (mirror VendorController) firing RequestExchange." },
-	{ rank=7, title="Vendor remotes lack a server proximity check",
-		why="buy/sell are gated only by the client ProximityPrompt; the remote works from anywhere. Economically neutral (fair value, no dupe) so low-risk, but inconsistent with the 'validate at point of use' rule.",
-		rec="Add a server-side range check vs the vendor NPC in buy/sellFromVendor." },
+	{ rank=1, title="No remaining code-side gaps from the prior list",
+		why="Omamori acquisition/sale, phantom rendering, honorableDuelWin, money-changer UI, and vendor proximity are now wired through existing services/remotes.",
+		rec="Content pass remains: replace the Studio fallback MoneyChangerSpot with a real tagged MoneyChanger NPC/spot, and place the shrine/safe-zone/meditation tags listed in BuilderTodo." },
 }
 
 -- ============================================================================
 -- HANDOFF STATE
 -- ============================================================================
 GameJournal.HandoffState = {
-	updated="2026-06-28",
+	updated="2026-06-29",
 	agent="Codex",
 	phase="Phase 1",
-	task="Task 2 - Gap #1: Seppuku + Lineage/Inheritance",
+	task="Game-test readiness gap closure",
 	green={
 		"Boot-green with SeppukuService online and remotes registered.",
 		"Seppuku -> Lineage/Inheritance marked CONNECTED.",
@@ -393,13 +386,22 @@ GameJournal.HandoffState = {
 		"Git was initialized on main and origin was configured to https://github.com/TheEmpireRankingBot/edosamurai.git.",
 		"External Google Doc 'Edo: The Rising Sun - Kurosawa Storyline' updated into the current narrative north star: the fillable map-based skeleton 'The Bell That Rings Before Dawn'.",
 		"Priest Gensui is the prophecy hinge; his mirror/rice/bell/rope/kegare line should read like shrine atmosphere first and only become clear after the execution arc resolves.",
+		"Tool unequip state is server-authoritative: if no recognized Tool remains in the character, equipped.weapon normalizes to Unarmed.",
+		"Solo dummy armor is selectable through RequestSoloDummyArmorClass; UI buttons and Z/X/C set light/medium/heavy and reset dummy HP.",
+		"Omamori loop is reachable end-to-end: prepare Gofu Paper -> craft -> sell nearby -> buyer applies buff.",
+		"Phantom visuals read shura_kills for T4+ Shura players.",
+		"Honorable duel spare now grants the existing honorableDuelWin Gi reward.",
+		"Money changer UI calls RequestExchange near a tagged changer and preserves the existing 5% fee.",
+		"Vendor buy/sell remotes now validate proximity server-side.",
+		"Live Studio sync imported 18 scripts/configs/controllers/journal entries and booted green; server probe found no missing new remotes and confirmed MoneyChangerSpot tag/prompt, talisman_paper config, vendor range 14, phantom API, and journal gap status.",
 	},
 	next={
-		"Task 3 in the new list is combat test assets; those proxies already exist from the earlier Codex pass, but rerun verification before marking the new task complete.",
+		"Commit and push this checkpoint.",
 	},
 	todo={
 		"Keep /docs/GAME_JOURNAL.md and ReplicatedStorage.GameJournal aligned after each checkpoint.",
 		"Seppuku animation is a placeholder client hook (SeppukuAnim) until a real animation asset is supplied.",
+		"Replace the Studio fallback MoneyChangerSpot with a real tagged MoneyChanger NPC/spot before content lock.",
 	},
 }
 
@@ -407,6 +409,33 @@ GameJournal.HandoffState = {
 -- CHANGELOG
 -- ============================================================================
 GameJournal.Changelog = {
+	{ date="2026-06-29", title="Codex game-test readiness gap closure", entries={
+		"Agent: Codex. Closed the remaining code-side gaps from the journal.",
+		"Files touched: ServerScriptService.Services.EconomyService, MoralityService, NPCService, PriestService, CombatService; StarterPlayer.StarterPlayerScripts.Main.Controllers.PriestController, MoralityController, MoneyChangerController; ReplicatedStorage.Config.EconomyConfig, MoralityConfig, PriestConfig, VendorDefs; docs/GAME_JOURNAL.md; ReplicatedStorage.GameJournal.",
+		"Added priest-side Gofu Paper preparation (RequestPrepareTalismanPaper) and nearby omamori sale (RequestSellOmamori) using EconomyService.transfer and inventory rollback on failure.",
+		"Added Shura phantom payload/rendering from shura_kills, activated only for tiers whose config enables phantoms.",
+		"Connected duel spare wins to reason='honorable' so honorableDuelWin Gi gain is reachable.",
+		"Added money-changer prompt/UI path for RequestExchange; Studio fallback creates MoneyChangerSpot if no tagged changer exists.",
+		"Added server-side vendor proximity rejection for buy/sell remotes.",
+		"Verified live boot-green after syncing 18 scripts into Studio; server probe confirmed remotes, Gofu Paper config, MoneyChanger prompt/tag, vendor range, phantom API, and journal gap status.",
+	} },
+	{ date="2026-06-29", title="Codex combat unequip and solo dummy armor selector", entries={
+		"Agent: Codex. Player bugfix handoff after Claude armor-class pass.",
+		"Files touched: ServerScriptService.Services.CombatService, StarterPlayer.StarterPlayerScripts.Main.Controllers.CombatController, StarterPlayer.StarterPlayerScripts.SoloDummyHitController, ServerScriptService.SoloDummyCombatHarness, docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",
+		"Fixed stale weapon state after Tool unequip: CombatService now resolves recognized Tool names/attributes, updates equipped.weapon on character Tool add/remove, and normalizes to Unarmed when no recognized Tool remains equipped.",
+		"CombatController and SoloDummyHitController now mirror physical Tool equip/unequip locally so client hit requests do not keep sending stale Katana after unequip.",
+		"Added RequestSoloDummyArmorClass and a Studio-only solo dummy armor selector UI with light/medium/heavy buttons plus hotkeys Z/X/C.",
+		"Live Studio was patched directly; boot verification showed the new remote registered and all Loader services/controllers online with no new runtime errors.",
+	} },
+	{ date="2026-06-29", title="Edo armour classes (damage reduction by class)", entries={
+		"Agent: Claude. Player request: fists must not be a quick KO, and armour should scale by Edo class (heavy=skill to break, medium=tactical, light=fragile).",
+		"Files touched: ReplicatedStorage.Config.CombatConfig, ServerScriptService.Services.CombatService, ServerScriptService.SoloDummyCombatHarness, ServerScriptService.CombatTestHarness, ReplicatedStorage.GameJournal.",
+		"Replaced the single flat ARMOR_DAMAGE_REDUCTION (0.40) with CombatConfig.ArmorClasses: light=Tatami-gusoku 15%, medium=Dō-maru 60%, heavy=Tōsei-gusoku 93%. equipped.armor now stores the class key; CombatConfig.getArmorReduction(value) resolves it (nil/none->0, known class->its reduction, unknown legacy value->0.40 fallback).",
+		"CombatService.resolveHit reduces a normal hit by the class reduction; a GapZone hit and weapon.ignoresArmor (Kanabo) still bypass armour for FULL damage = the skill kill path (the neck/armpit gaps a swordsman historically aimed for).",
+		"Result (HP100): fists none=15(7 hits)/light=13/medium=6/heavy=1; Katana torso none=55(2)/light=47/medium=22/heavy=4; any GapZone=55(2); Kanabo=70. No 2-3-hit fist KOs anywhere.",
+		"Test scaffolding: SoloArmorDummy reads an 'ArmorClass' attribute (default heavy); CombatTestHarness dummy reads 'CombatTestArmorClass' (default heavy). No production combat logic changed beyond the reduction lookup.",
+		"Verified live: unit-tested getArmorReduction (0/.15/.60/.93, legacy .40); integration via SoloDummy: heavy Katana torso=4, Naginata torso=3, GapZone=55 (downs in 2). Boot green, 14 services + 17 controllers.",
+	} },
 	{ date="2026-06-28", title="Codex map story skeleton and Gensui prophecy", entries={
 		"Agent: Codex. Narrative/storyline handoff follow-up.",
 		"Files touched: external Google Doc 'Edo: The Rising Sun - Kurosawa Storyline', docs/GAME_JOURNAL.md, ReplicatedStorage.GameJournal.",

@@ -35,7 +35,30 @@ CombatConfig.Weapons = {
 CombatConfig.WeaponNames = { "Katana", "Naginata", "Kanabo", "Unarmed" } :: { string }
 
 -- ── Armor ────────────────────────────────────────────────────────────────────
-CombatConfig.ARMOR_DAMAGE_REDUCTION = 0.40   -- 40% off, UNLESS gap-hit or weapon.ignoresArmor
+-- Edo-era armour CLASSES. The reduction applies ONLY to a normal hit. Two things
+-- bypass it for FULL damage (unchanged): a GapZone hit (the skilled neck/armpit
+-- strike — historically where a swordsman aimed, since the plate was near-immune)
+-- and weapon.ignoresArmor (the Kanabo bludgeon crushing through plate).
+--   Light  — tatami-gusoku (folding kikkō/karuta plates on cloth) / kusari katabira
+--            (mail): travelers, ashigaru, low rank. Fragile — heavier foes overwhelm.
+--   Medium — dō-maru / munition okegawa-dō: retainers. Survivable; clean kills need
+--            tactical gap hits, not brute chip damage.
+--   Heavy  — tōsei-gusoku (full samurai harness): high rank. Near-immune to normal
+--            blows; only a gap hit, a kanabo, or downing+executing breaks it.
+export type ArmorClass = { reduction: number, edoName: string }
+CombatConfig.ArmorClasses = {
+	light  = { reduction = 0.15, edoName = "Tatami-gusoku" },
+	medium = { reduction = 0.60, edoName = "Dō-maru"       },
+	heavy  = { reduction = 0.93, edoName = "Tōsei-gusoku"  },
+} :: { [string]: ArmorClass }
+
+-- Ordered whitelist of armour-class keys (for Validate.literal / tooling).
+CombatConfig.ArmorClassNames = { "light", "medium", "heavy" } :: { string }
+
+-- Fallback reduction for an equipped.armor value that is SET but is not a known
+-- class key (e.g. older "test_armor" data). Keeps legacy profiles from breaking.
+CombatConfig.ARMOR_DAMAGE_REDUCTION = 0.40
+
 CombatConfig.GAP_RADIUS             = 1.5    -- studs; hit within this of a GapZone = full damage
 CombatConfig.GAP_ATTACHMENT_NAME    = "GapZone"  -- Attachment name marking an armor gap
 
@@ -71,5 +94,20 @@ CombatConfig.RANGE_SLACK = 2  -- server allows hits up to weapon.range + this ma
 CombatConfig.JISEI_RADIUS    = 30   -- studs; poem broadcast radius
 CombatConfig.JISEI_MAX_CHARS = 120
 CombatConfig.DEFAULT_JISEI   = "The dew of morning\nvanishes without a trace —\nso fades this life."
+
+-- Resolve an equipped.armor value to a damage-reduction fraction in [0,1).
+--   nil / "" / "none"      -> 0      (unarmoured: full damage)
+--   a known ArmorClasses key -> that class's reduction
+--   any other non-empty string (legacy data) -> ARMOR_DAMAGE_REDUCTION fallback
+function CombatConfig.getArmorReduction(armorValue: string?): number
+	if armorValue == nil or armorValue == "" or armorValue == "none" then
+		return 0
+	end
+	local class = CombatConfig.ArmorClasses[armorValue]
+	if class ~= nil then
+		return class.reduction
+	end
+	return CombatConfig.ARMOR_DAMAGE_REDUCTION
+end
 
 return CombatConfig

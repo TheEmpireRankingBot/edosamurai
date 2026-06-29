@@ -43,6 +43,92 @@ local blockGlow:     Frame?
 local flashLabel:    TextLabel?
 local downedOverlay: Frame?
 
+local observedTools: { [Tool]: boolean } = {}
+local observedContainers: { [Instance]: boolean } = {}
+
+local function setCurrentWeapon(weaponName: string)
+	if CombatConfig.Weapons[weaponName] == nil then
+		weaponName = "Unarmed"
+	end
+	currentWeapon = weaponName
+	if weaponLabel then
+		weaponLabel.Text = "Weapon: " .. currentWeapon
+	end
+end
+
+local function weaponNameFromTool(tool: Tool): string?
+	local rawWeapon = tool:GetAttribute("weaponType")
+	if type(rawWeapon) ~= "string" then
+		rawWeapon = tool:GetAttribute("WeaponType")
+	end
+	if type(rawWeapon) == "string" and CombatConfig.Weapons[rawWeapon] ~= nil then
+		return rawWeapon
+	end
+	if CombatConfig.Weapons[tool.Name] ~= nil then
+		return tool.Name
+	end
+	if tool.Name == "Wakizashi" then
+		return "Unarmed"
+	end
+	return nil
+end
+
+local function equippedToolWeapon(): string?
+	local char = player.Character
+	if char == nil then return nil end
+	for _, child in char:GetChildren() do
+		if child:IsA("Tool") then
+			local weaponName = weaponNameFromTool(child :: Tool)
+			if weaponName ~= nil then
+				return weaponName
+			end
+		end
+	end
+	return nil
+end
+
+local function requestEquip(weaponName: string)
+	setCurrentWeapon(weaponName)
+	Net.fireServer("RequestEquipWeapon", { weapon = currentWeapon })
+end
+
+local function observeTool(tool: Tool)
+	if observedTools[tool] then return end
+	observedTools[tool] = true
+
+	tool.Equipped:Connect(function()
+		local weaponName = weaponNameFromTool(tool)
+		if weaponName ~= nil then
+			requestEquip(weaponName)
+		end
+	end)
+
+	tool.Unequipped:Connect(function()
+		local removedWeapon = weaponNameFromTool(tool)
+		if removedWeapon == nil then return end
+		task.defer(function()
+			if equippedToolWeapon() == nil and currentWeapon == removedWeapon then
+				requestEquip("Unarmed")
+			end
+		end)
+	end)
+end
+
+local function observeToolContainer(container: Instance)
+	if observedContainers[container] then return end
+	observedContainers[container] = true
+	for _, child in container:GetChildren() do
+		if child:IsA("Tool") then
+			observeTool(child :: Tool)
+		end
+	end
+	container.ChildAdded:Connect(function(child: Instance)
+		if child:IsA("Tool") then
+			observeTool(child :: Tool)
+		end
+	end)
+end
+
 local function makeBar(parent: Instance, y: number, w: number, h: number, fillColor: Color3): Frame
 	local track = Instance.new("Frame")
 	track.Size                   = UDim2.fromOffset(w, h)
@@ -83,7 +169,7 @@ local function buildHud()
 	wl.Position               = UDim2.new(0.5, 0, 1, -72)
 	wl.AnchorPoint            = Vector2.new(0.5, 1)
 	wl.BackgroundTransparency = 1
-	wl.Text                   = "⚔ Unarmed"
+	wl.Text                   = "Weapon: Unarmed"
 	wl.TextColor3             = GOLD
 	wl.TextSize               = 15
 	wl.Font                   = Enum.Font.Antique
@@ -248,13 +334,12 @@ local function tryAttack()
 end
 
 local function equip(weaponName: string)
-	Net.fireServer("RequestEquipWeapon", { weapon = weaponName })
+	requestEquip(weaponName)
 end
 
 function CombatController:Init()
 	Net.onClientEvent("CombatLoadout", function(payload: any)
-		currentWeapon = (payload :: any).weapon or "Unarmed"
-		if weaponLabel then weaponLabel.Text = "⚔ " .. currentWeapon end
+		setCurrentWeapon((payload :: any).weapon or "Unarmed")
 	end)
 
 	Net.onClientEvent("StaminaUpdate", function(payload: any)
@@ -301,13 +386,28 @@ end
 
 function CombatController:Start()
 	buildHud()
+	setCurrentWeapon(currentWeapon)
 	updateHealth(CombatConfig.MAX_HEALTH)
 	updateStamina(maxStamina)
 
-	player.CharacterAdded:Connect(function()
+	local backpack = player:FindFirstChildOfClass("Backpack") or player:WaitForChild("Backpack", 10)
+	if backpack ~= nil then
+		observeToolContainer(backpack)
+	end
+	if player.Character then
+		observeToolContainer(player.Character)
+	end
+
+	player.CharacterAdded:Connect(function(char: Model)
 		swingTrack = nil
 		showDowned(false)
 		updateHealth(CombatConfig.MAX_HEALTH)
+		observeToolContainer(char)
+		task.defer(function()
+			if equippedToolWeapon() == nil then
+				requestEquip("Unarmed")
+			end
+		end)
 	end)
 
 	UserInputService.InputBegan:Connect(function(input: InputObject, gp: boolean)
